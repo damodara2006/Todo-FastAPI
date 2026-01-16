@@ -1,14 +1,24 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import database_model
 from model import Product, Data
 from database_model import Product as ProductsTable
 from database import engine,SessionLocal
 app = FastAPI()
 
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vite's default dev server
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
 database_model.Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
-
+# @app.
 # @app.post("/create")
 @app.get("/")
 def greet():
@@ -77,3 +87,28 @@ def delete(id : int):
     db.commit()
     
     return read_root()
+
+@app.post("/instagram")
+def fetch(token : str):
+    import os
+    import json
+    import requests
+    # from dotenv import load_dotenv
+
+    # load_dotenv()
+    print(token)
+
+    ACCESS_TOKEN = token
+
+    url = "https://graph.instagram.com/me/media"
+    params = {
+  "fields": "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count,children{media_type,media_url,permalink}",
+  "limit": 50,
+  "access_token": token
+}
+
+    print(params)
+    res = requests.get(url, params=params)
+    data = res.json()
+    return data
+    # return data
