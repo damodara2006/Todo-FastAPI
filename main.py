@@ -93,6 +93,8 @@ def fetch(token : str):
     import os
     import json
     import requests
+    import pandas
+    import pandas as pd
     # from dotenv import load_dotenv
 
     # load_dotenv()
@@ -106,9 +108,45 @@ def fetch(token : str):
   "limit": 50,
   "access_token": token
 }
+    
 
-    print(params)
+    # print(params)
     res = requests.get(url, params=params)
     data = res.json()
-    return data
+    jsond = json.dumps(data)
+    # print(type(data))
+    # print(jsond)
+    # jsondata = pandas.read_json(data)
+    with open("data.json","w",encoding="utf-8") as f :
+        json.dump(data, f,  ensure_ascii=False, indent=2)
+    # print(jsondata)
+    with open("data.json", "r", encoding="utf-8") as f:
+        j = json.load(f)
+        
+    # print(j)
+    df = pandas.json_normalize(j["data"])
+    # df.to_csv("data.csv")
+    
+
+    # df = pd.read_csv("data.csv")
+
+    print(df)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["day"] = df["timestamp"].dt.date
+    df["hour"] = df["timestamp"].dt.hour
+    df.to_csv("data.csv")
+    
+    analysis = {
+        "total_posts": int(len(df)),
+        "total_likes": int(df["like_count"].sum()),
+        "total_comments": int(df["comments_count"].sum()),
+        "avg_likes": float(df["like_count"].mean()),
+        "avg_comments": float(df["comments_count"].mean()),
+        # "top_post": df.sort_values(["like_count", "comments_count"], ascending=False).head(1).to_dict(orient="records")[0]
+    }
+
+    # print(analysis)
+
+
+    return {"data":data, "analysis":analysis}
     # return data
