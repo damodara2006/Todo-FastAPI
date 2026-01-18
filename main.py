@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import database_model
 from model import Product, Data
 from database_model import Product as ProductsTable
 from database import engine,SessionLocal
+from langchain.chat_models import init_chat_model
 app = FastAPI()
 
 # Configure CORS
@@ -150,3 +152,26 @@ def fetch(token : str):
 
     return {"data":data, "analysis":analysis}
     # return data
+
+def stream(data : str):
+    from dotenv import load_dotenv
+    import os
+
+    load_dotenv()
+    env = os.getenv("GOOGLE_API_KEY")
+    print(env)
+    model = init_chat_model("google_genai:gemini-2.5-flash-lite")
+    # model.stream
+    for chunk in model.stream(data):
+        print(chunk.content)
+        yield f"data: {chunk.content}\n\n"
+
+    yield "data: [DONE]\n\n"
+@app.get("/stream")
+def temp(data : str): 
+    print(data)
+    return StreamingResponse(stream(data), media_type="text/event-stream")
+    
+    
+    
+    
